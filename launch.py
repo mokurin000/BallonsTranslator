@@ -7,7 +7,6 @@ import importlib
 import re
 import subprocess
 import importlib.util
-import pkg_resources
 from platform import platform
 
 BRANCH = 'dev'
@@ -155,8 +154,6 @@ def main():
     APP_DIR = os.path.dirname(os.path.abspath(__file__))
     os.chdir(APP_DIR)
 
-    prepare_environment()
-
     from utils.logger import setup_logging, logger as LOGGER
     import utils.shared as shared
     from utils.io_utils import find_all_files_recursive
@@ -279,34 +276,6 @@ def main():
         ballontrans.show()
         ballontrans.resetStyleSheet()
     sys.exit(app.exec())
-
-def prepare_environment():
-    if getattr(sys, 'frozen', False):
-        print('Running as app, skip dependency installation')
-        return
-
-    req_updated = False
-    if sys.platform == 'win32':
-        for req in REQ_WIN:
-            try:
-                pkg_resources.require(req)
-            except Exception:
-                run_pip(f"install {req}", req)
-                req_updated = True
-    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==2.2.2 torchvision==0.17.2 --index-url https://download.pytorch.org/whl/cu118 --disable-pip-version-check")
-    if args.reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
-        run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
-        req_updated = True
-    try:
-        pkg_resources.require(open(args.requirements,mode='r', encoding='utf8'))
-    except Exception as e:
-        print(e)
-        run_pip(f"install -r {args.requirements}", "requirements")
-        req_updated = True
-
-    if req_updated:
-        import site
-        importlib.reload(site)
 
 if __name__ == '__main__':
     main()
